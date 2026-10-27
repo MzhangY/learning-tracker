@@ -19,5 +19,7 @@
   "exclude_dir_names": ["node_modules", ".git", "__pycache__", ".venv", "venv", ".idea", "dist", "build", "target", "cache", "Cache", "Debug", ".gradle", "site-packages", "xwechat_files", "WeChat Files", "Tencent Files", "WXWork", "db_storage", "FileStorage"],
   "exclude_file_patterns": ["~$", ".tmp", ".crdownload", ".part", ".lock", ".pyc", ".log"],
   "max_files": 3000,
+  "ai_domains": ["deepseek.com", "chatglm.cn", "kimi.moonshot.cn", "kimi.com", "yiyan.baidu.com", "tongyi.aliyun.com", "yuanbao.tencent.com", "chatgpt.com", "poe.com", "doubao.com", "metaso.cn", "qwen.ai", "grok.com", "claude.ai"],
+  "browser_exe_keywords": ["edge", "chrome", "quark", "browser", "firefox", "2345"],
   "search_param_names": ["q", "wd", "word", "query", "keyword", "kw", "text", "search_value"]
 }

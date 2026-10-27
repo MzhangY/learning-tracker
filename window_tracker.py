@@ -57,6 +57,32 @@ def get_idle_seconds():
     return (now_tick - info.dwTime) / 1000.0
 
 
+CF_UNICODETEXT = 13
+GLOBAL_LOCK = 0x00020000  # GMEM_MOVEABLE
+
+
+def get_clipboard_text():
+    """读取剪贴板文本（失败返回 None）"""
+    try:
+        if not user32.OpenClipboard(None):
+            return None
+        try:
+            h = user32.GetClipboardData(CF_UNICODETEXT)
+            if not h:
+                return None
+            p = kernel32.GlobalLock(h)
+            if not p:
+                return None
+            try:
+                return ctypes.c_wchar_p(p).value
+            finally:
+                kernel32.GlobalUnlock(h)
+        finally:
+            user32.CloseClipboard()
+    except Exception:
+        return None
+
+
 def day_path():
     return os.path.join(DATA_DIR, f"window-{datetime.now().strftime('%Y-%m-%d')}.json")
 
@@ -69,7 +95,15 @@ def load_data():
                 return json.load(f)
         except (json.JSONDecodeError, OSError):
             pass
-    return {"date": datetime.now().strftime("%Y-%m-%d"), "segments": []}
+    return {"date": datetime.now().strftime("%Y-%m-%d"), "segments": [], "clipboard": []}
+
+
+def is_browser(app):
+    """判断前台程序是否为浏览器（用于剪贴板联动）"""
+    with open(os.path.join(BASE, "config.json"), "r", encoding="utf-8") as f:
+        keywords = json.load(f).get("browser_exe_keywords", ["edge", "chrome", "quark", "browser"])
+    a = (app or "").lower()
+    return any(k in a for k in keywords)
 
 
 def save_data(data):
@@ -99,13 +133,13 @@ def main():
     print(f"[启动] 窗口监控运行中，每 {POLL_SECONDS}s 采样，数据写入 data/")
     data = load_data()
     current = None  # {"app","title","start","end"}
+    last_clip = None
     while True:
         try:
             if get_idle_seconds() > IDLE_PAUSE_SECONDS:
                 if current:
                     close_segment(data, current)
                     current = None
-                ctypes.windll.user32.SetCursorPos(0, 0) if False else None
                 import time
                 time.sleep(POLL_SECONDS * 6)  # 空闲时降频
                 continue
@@ -120,6 +154,17 @@ def main():
                         if current:
                             close_segment(data, current)
                         current = {"app": app, "title": title, "start": now, "end": now}
+                # 剪贴板联动：浏览器前台 + 剪贴板有新内容 -> 记录（大概率是粘贴给 AI 的问题）
+                if is_browser(app):
+                    clip = get_clipboard_text()
+                    if clip and clip != last_clip and len(clip.strip()) > 1:
+                        last_clip = clip
+                        data.setdefault("clipboard", []).append({
+                            "time": datetime.now().strftime("%H:%M:%S"),
+                            "browser": app,
+                            "text": clip.strip()[:2000],
+                        })
+                        save_data(data)
         except Exception as e:
             print(f"[警告] {e}")
         import time

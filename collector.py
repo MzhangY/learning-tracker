@@ -59,9 +59,14 @@ def extract_search(url, title):
         return None
 
 
+def is_ai_host(host):
+    host = (host or "").lower()
+    return any(d in host for d in CONFIG["ai_domains"])
+
+
 def collect_browser_history(since):
     """复制历史库后读取当天浏览记录（避免浏览器锁库）"""
-    visits, searches = [], []
+    visits, searches, ai_chats = [], [], []
     tmp_dir = tempfile.mkdtemp(prefix="ltracker_")
     try:
         for browser in CONFIG["browsers"]:
@@ -93,10 +98,16 @@ def collect_browser_history(since):
                 if not url.startswith(("http://", "https://")):
                     continue
                 host = urlparse(url).netloc
+                title = (title or "").strip() or url
                 visits.append({
                     "time": dt.strftime("%H:%M"), "browser": name,
-                    "title": (title or "").strip() or url, "host": host, "url": url,
+                    "title": title, "host": host, "url": url,
                 })
+                if is_ai_host(host):
+                    ai_chats.append({
+                        "time": dt.strftime("%H:%M"), "browser": name,
+                        "host": host, "topic": title, "url": url,
+                    })
                 hit = extract_search(url, title)
                 if hit:
                     engine, query = hit
@@ -107,7 +118,7 @@ def collect_browser_history(since):
             print(f"[OK] {name}: 当天记录 {len(rows)} 条")
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
-    return visits, searches
+    return visits, searches, ai_chats
 
 
 def should_skip_dir(dirname):
@@ -163,19 +174,26 @@ def load_existing(day_path):
     return None
 
 
-def merge_records(existing, visits, searches, files):
+def merge_records(existing, visits, searches, files, ai_chats):
     """与已有数据合并去重（增量收集不重复计数）"""
     if existing:
         visits = existing.get("visits", []) + visits
         searches = existing.get("searches", []) + searches
         files = existing.get("files", []) + files
+        ai_chats = existing.get("ai_sessions", []) + ai_chats
+        clipboard = existing.get("clipboard", [])
+    else:
+        clipboard = []
     visits = {v["url"] + "|" + v["time"]: v for v in visits}
     searches = {s["query"] + "|" + s["time"]: s for s in searches}
     files = {f["path"] + "|" + f["time"]: f for f in files}
+    ai_chats = {a["url"] + "|" + a["time"]: a for a in ai_chats}
     dedup = lambda items, key: sorted(items, key=key)
     return (dedup(visits.values(), lambda x: x["time"]),
             dedup(searches.values(), lambda x: x["time"]),
-            dedup(files.values(), lambda x: x["time"]))
+            dedup(files.values(), lambda x: x["time"]),
+            dedup(ai_chats.values(), lambda x: x["time"]),
+            clipboard)
 
 
 def main():
@@ -184,9 +202,10 @@ def main():
     date_str = since.strftime("%Y-%m-%d")
     day_path = os.path.join(DATA_DIR, f"{date_str}.json")
 
-    visits, searches = collect_browser_history(since)
+    visits, searches, ai_chats = collect_browser_history(since)
     files = collect_file_activity(since, max_mtime)
-    visits, searches, files = merge_records(load_existing(day_path), visits, searches, files)
+    visits, searches, files, ai_chats, clipboard = merge_records(
+        load_existing(day_path), visits, searches, files, ai_chats)
 
     data = {
         "date": date_str,
@@ -194,11 +213,13 @@ def main():
         "searches": searches,
         "visits": visits,
         "files": files,
+        "ai_sessions": ai_chats,
+        "clipboard": clipboard,
     }
     os.makedirs(DATA_DIR, exist_ok=True)
     with open(day_path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=1)
-    print(f"[完成] {date_str}: 搜索 {len(searches)} 条 / 浏览 {len(visits)} 页 / 文件 {len(files)} 个")
+    print(f"[完成] {date_str}: 搜索 {len(searches)} 条 / 浏览 {len(visits)} 页 / 文件 {len(files)} 个 / AI会话 {len(ai_chats)} 次")
     print(f"[输出] {day_path}")
 
 
