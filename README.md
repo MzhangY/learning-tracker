@@ -80,6 +80,47 @@ python C:\Users\Windows\WorkBuddy\learning-tracker\collector.py
 python C:\Users\Windows\WorkBuddy\learning-tracker\archive.py
 ```
 
+## 快速上手（新机器部署）
+
+环境要求：Windows 10/11 + Python 3.10+（无需安装任何第三方库，全部使用标准库）。
+
+```bash
+git clone https://github.com/MzhangY/learning-tracker.git
+cd learning-tracker
+```
+
+**第一步：改配置** `config.json`（按自己机器修改）：
+
+- `browsers`：改成你浏览器 History 文件的实际路径。常见位置：
+  - Chrome：`C:\Users\<你>\AppData\Local\Google\Chrome\User Data\Default\History`
+  - Edge：`C:\Users\<你>\AppData\Local\Microsoft\Edge\User Data\Default\History`
+  - 其他 Chromium 内核浏览器（夸克/360/Brave 等）同理，找到其 User Data 下的 `History` 文件即可
+- `scan_dirs`：改成你要监控的目录（桌面/文档/下载/代码目录等）
+- `archive_dir`：留档输出位置
+
+**第二步：测试运行**
+
+```bash
+python collector.py        # 收集一次，看 data/ 是否生成了今天的 json
+python window_tracker.py   # 窗口监控（Ctrl+C 停止），几分钟后切几个窗口再看 data/window-*.json
+```
+
+**第三步：配置常驻**（任选或都用）：
+
+- 窗口监控开机自启：把启动命令放入"启动"文件夹（Win+R 输入 `shell:startup`），或用任务计划程序（`taskschd.msc`）创建"登录时启动"任务，程序填 `pythonw.exe`（静默运行）
+- 收集器每小时运行：任务计划程序创建每小时任务运行 `collector.py`
+
+**第四步：生成日报**（两种方式任选）：
+
+- **有 AI 编程助手（WorkBuddy/Claude Code 等）**：创建一个定时自动化任务，让 AI 在每天固定时间读取 `data/` 下两个 json、归纳主题并生成 HTML 报告（报告格式参考本文件"每日使用"一节）
+- **纯手动**：没有 AI 也可以，数据本身就是按时间线整理好的 JSON/清单，每晚人工浏览 `data\` 文件即可
+
+## 隐私与安全说明（给所有使用者）
+
+- 所有数据只存在本机，不上传任何服务器；浏览器历史通过复制临时副本读取，不影响浏览器运行
+- 留档操作只复制、从不删除或移动原文件
+- 若要把本项目推到自己的公开仓库，注意 `config.json` 含本机用户名路径、`data\` 含你的浏览记录，**务必先加入 .gitignore 再提交**（本仓库的 .gitignore 已默认排除）
+
 ## 隐私说明
 
 - 所有数据只存在本机，浏览器历史通过复制临时副本读取，不影响浏览器运行
