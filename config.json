@@ -1,0 +1,23 @@
+{
+  "browsers": [
+    {
+      "name": "Edge",
+      "history_path": "C:\\Users\\Windows\\AppData\\Local\\Microsoft\\Edge\\User Data\\Default\\History"
+    },
+    {
+      "name": "夸克",
+      "history_path": "C:\\Users\\Windows\\AppData\\Local\\Quark\\User Data\\Default\\History"
+    }
+  ],
+  "scan_dirs": [
+    "C:\\Users\\Windows\\Desktop",
+    "C:\\Users\\Windows\\Documents",
+    "C:\\Users\\Windows\\Downloads",
+    "D:\\PycharmProjects"
+  ],
+  "archive_dir": "D:\\学习留档",
+  "exclude_dir_names": ["node_modules", ".git", "__pycache__", ".venv", "venv", ".idea", "dist", "build", "target", "cache", "Cache", "Debug", ".gradle", "site-packages", "xwechat_files", "WeChat Files", "Tencent Files", "WXWork", "db_storage", "FileStorage"],
+  "exclude_file_patterns": ["~$", ".tmp", ".crdownload", ".part", ".lock", ".pyc", ".log"],
+  "max_files": 3000,
+  "search_param_names": ["q", "wd", "word", "query", "keyword", "kw", "text", "search_value"]
+}

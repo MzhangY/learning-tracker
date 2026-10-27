@@ -1,0 +1,7 @@
+data/
+reports/
+keep/
+archive_tmp/
+__pycache__/
+*.pyc
+*.done
