@@ -5,3 +5,5 @@ archive_tmp/
 __pycache__/
 *.pyc
 *.done
+.idea/
+.workbuddy/
